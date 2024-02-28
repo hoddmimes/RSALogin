@@ -27,4 +27,4 @@ The steps taking to establish an authorized session between a 'client' and a ser
 5. The client will verify the challange from the server with the one generated to the client. If being the same the server will known that the client has the private SSH key.
 
 
-The Test.java program schematically implements and test the steps above using the **SSHKeyAuthorization** object. 
+The [Test.java](https://github.com/hoddmimes/RSALogin/blob/main/src/main/java/com/hoddmimes/sshauth/Test.java) program schematically implements and test the steps above using the **SSHKeyAuthorization** object. 
