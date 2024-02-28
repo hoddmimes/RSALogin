@@ -86,7 +86,7 @@ public class Test
         BigInteger server_secret_value = server.getSecretValue();
 
         if (!client_secret_value.equals(server_secret_value)) {
-            System.out.println("Common secret DH value is not the same");
+            throw new Exception("Common secret DH value is not the same");
         }
 
         // Verify that client and server has agreed upon the same secret key, later being used to establishing a secure channel
@@ -95,8 +95,7 @@ public class Test
 
         for (int i = 0; i < clt_key_bytes.length; i++) {
             if (clt_key_bytes[i] != srv_key_bytes[i]) {
-                System.out.println("Secret key are not the same at position " + i);
-                return;
+                throw new Exception("Secret key are not the same at position " + i);
             }
         }
 
@@ -124,8 +123,7 @@ public class Test
             tUncryptedChallange = srvCipher.decrypt(tCltChlData);
             // When having the uncrypted challange from the client it needs to be verified against the generated challange
             if (!server.verifyChallange( tUncryptedChallange)) {
-                System.out.println("Failed to verify challange");
-                return;
+                throw new Exception("Failed to verify challange");
             }
 
 
