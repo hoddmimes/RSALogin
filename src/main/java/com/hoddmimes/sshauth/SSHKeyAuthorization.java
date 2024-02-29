@@ -6,8 +6,7 @@ import com.sshtools.common.publickey.SshKeyUtils;
 import com.sshtools.common.ssh.components.*;
 
 
-import javax.crypto.Cipher;
-import javax.crypto.SecretKey;
+import javax.crypto.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -109,44 +108,28 @@ public class SSHKeyAuthorization {
     // Alice secret key = x**y mod p --> 10**5 mod 23 --> 100000 mod 23 --> 19
 
 
-    public byte[] encryptKey(PublicKey key, byte[] plaintext)
+    public byte[] encryptKey(PublicKey key, byte[] plaintext) throws NoSuchPaddingException,NoSuchAlgorithmException,InvalidKeyException, IllegalBlockSizeException, BadPaddingException
     {
-        try {
             Cipher cipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA1AndMGF1Padding");
             cipher.init(Cipher.ENCRYPT_MODE, key);
             return cipher.doFinal(plaintext);
-        }
-        catch( Exception e) {
-            e.printStackTrace();
-        }
-        return null;
     }
 
-    public byte[] decryptKey(PrivateKey key, byte[] ciphertext)  {
-        try {
+    public byte[] decryptKey(PrivateKey key, byte[] ciphertext)  throws NoSuchPaddingException,NoSuchAlgorithmException,InvalidKeyException, IllegalBlockSizeException, BadPaddingException
+    {
             Cipher cipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA1AndMGF1Padding");
             cipher.init(Cipher.DECRYPT_MODE, key);
             return cipher.doFinal(ciphertext);
-        }
-        catch( Exception e) {
-            e.printStackTrace();
-        }
-        return null;
     }
 
-    public byte[] decrypt(PublicKey key, byte[] ciphertext)  {
-        try {
+    public byte[] decrypt(PublicKey key, byte[] ciphertext)  throws NoSuchPaddingException,NoSuchAlgorithmException,InvalidKeyException, IllegalBlockSizeException, BadPaddingException
+    {
             Cipher cipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA1AndMGF1Padding");
             cipher.init(Cipher.DECRYPT_MODE, key);
             return cipher.doFinal(ciphertext);
-        }
-        catch( Exception e) {
-            e.printStackTrace();
-        }
-        return null;
     }
 
-    public byte[] getEncryptedChallange(int pSize) throws NoSuchAlgorithmException, InvalidKeySpecException {
+    public byte[] getEncryptedChallange(int pSize) throws Exception{
         this.mChallange = new byte[ pSize ];
         SecureRandom tRandom = new SecureRandom();
         tRandom.nextBytes( this.mChallange );
@@ -157,7 +140,7 @@ public class SSHKeyAuthorization {
         return encryptKey( tPubKey, this.mChallange);
     }
 
-    public byte[] decryptChallange(byte[] pEncryptedChallange) throws NoSuchAlgorithmException, InvalidKeySpecException {
+    public byte[] decryptChallange(byte[] pEncryptedChallange) throws Exception {
             PrivateKey tPrvKey = mSshPrvKeyPair.getPrivateKey().getJCEPrivateKey();
             return this.decryptKey( tPrvKey, pEncryptedChallange );
     }
