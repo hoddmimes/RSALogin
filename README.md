@@ -9,7 +9,7 @@ SSH generated keys are used when establish encrypted sessions with the SSH serve
 In case you would like to use generate SSH keys to authorize your own arbitrary service in the same way as
 a SSH server does this utility can certainly help you. 
 
-What you typically wil do is to provide SSH generated keys using typicall using a standard SSH utility
+What you typically wil do is to provide SSH generated keys using a standard SSH utility e.g
 see [ssh-keygen](https://www.ssh.com/academy/ssh/keygen).
 
 The steps taking to establish an authorized session between a 'client' and a server using the SSH keys are the following.
