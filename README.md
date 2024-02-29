@@ -2,7 +2,7 @@
 
 
 
-This project contain and provides functionality for using generate (RSA) **SSH keys** to authorize a arbitrary 'client/server' connection.
+This project contain and provides functionality for using generate (RSA) **SSH keys** to authorize an arbitrary 'client/server' connection.
 
 SSH generated keys are used when establish encrypted sessions with the SSH server using the SSH utility.
 
