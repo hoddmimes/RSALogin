@@ -31,7 +31,7 @@ public class DHKeyAgreement
     DHKeyAgreement( BigInteger p, BigInteger g) {
         this.p = p;
         this.g = g;
-        this.y = getRandomPrime( 256 );
+        this.y = getRandomPrime( 256 * 8 );
     }
 
 

@@ -10,6 +10,9 @@ repositories {
 }
 
 dependencies {
+    implementation group: 'org.bouncycastle', name: 'bcprov-jdk18on', version: '1.71'
+    implementation group: 'org.bouncycastle', name: 'bcpkix-jdk18on', version: '1.77'
+
     implementation group: 'com.sshtools', name: 'maverick-utils', version: '3.1.0'
     implementation group: 'com.sshtools', name: 'maverick-synergy-client', version: '3.1.0'
     implementation group: 'com.sshtools', name: 'maverick-base', version: '3.1.0'

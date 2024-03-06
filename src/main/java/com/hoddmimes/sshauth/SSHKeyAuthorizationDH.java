@@ -14,7 +14,6 @@ import java.math.BigInteger;
 
 import java.security.*;
 
-import java.security.spec.InvalidKeySpecException;
 import java.security.spec.RSAPublicKeySpec;
 
 /**
@@ -37,7 +36,7 @@ import java.security.spec.RSAPublicKeySpec;
  */
 
 
-public class SSHKeyAuthorization {
+public class SSHKeyAuthorizationDH {
     private DHKeyAgreement mAgreement;
     private byte[] mChallange;
     private SshRsaPublicKey mSshPubKey;
@@ -108,28 +107,27 @@ public class SSHKeyAuthorization {
     // Alice secret key = x**y mod p --> 10**5 mod 23 --> 100000 mod 23 --> 19
 
 
-    public byte[] encryptKey(PublicKey key, byte[] plaintext) throws NoSuchPaddingException,NoSuchAlgorithmException,InvalidKeyException, IllegalBlockSizeException, BadPaddingException
-    {
+    public byte[] encryptKey(PublicKey key, byte[] plaintext) throws GeneralSecurityException {
             Cipher cipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA1AndMGF1Padding");
             cipher.init(Cipher.ENCRYPT_MODE, key);
             return cipher.doFinal(plaintext);
     }
 
-    public byte[] decryptKey(PrivateKey key, byte[] ciphertext)  throws NoSuchPaddingException,NoSuchAlgorithmException,InvalidKeyException, IllegalBlockSizeException, BadPaddingException
+    public byte[] decryptKey(PrivateKey key, byte[] ciphertext)  throws GeneralSecurityException
     {
             Cipher cipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA1AndMGF1Padding");
             cipher.init(Cipher.DECRYPT_MODE, key);
             return cipher.doFinal(ciphertext);
     }
 
-    public byte[] decrypt(PublicKey key, byte[] ciphertext)  throws NoSuchPaddingException,NoSuchAlgorithmException,InvalidKeyException, IllegalBlockSizeException, BadPaddingException
+    public byte[] decrypt(PublicKey key, byte[] ciphertext)  throws GeneralSecurityException
     {
             Cipher cipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA1AndMGF1Padding");
             cipher.init(Cipher.DECRYPT_MODE, key);
             return cipher.doFinal(ciphertext);
     }
 
-    public byte[] getEncryptedChallange(int pSize) throws Exception{
+    public byte[] getEncryptedChallange(int pSize) throws GeneralSecurityException{
         this.mChallange = new byte[ pSize ];
         SecureRandom tRandom = new SecureRandom();
         tRandom.nextBytes( this.mChallange );
@@ -140,7 +138,7 @@ public class SSHKeyAuthorization {
         return encryptKey( tPubKey, this.mChallange);
     }
 
-    public byte[] decryptChallange(byte[] pEncryptedChallange) throws Exception {
+    public byte[] decryptChallange(byte[] pEncryptedChallange) throws GeneralSecurityException {
             PrivateKey tPrvKey = mSshPrvKeyPair.getPrivateKey().getJCEPrivateKey();
             return this.decryptKey( tPrvKey, pEncryptedChallange );
     }

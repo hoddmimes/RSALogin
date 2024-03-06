@@ -4,35 +4,37 @@ import com.sshtools.common.ssh.components.SshCipher;
 import com.sshtools.common.ssh.components.jce.AES256Ctr;
 import com.sshtools.common.ssh.components.jce.SHA256Digest;
 
-
 import java.io.File;
-import java.math.BigInteger;
+
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.security.Security;
 
 
-public class Test
+public class ECSSHTest
 {
 
 
     public static void main(String[] args) {
-        Test t = new Test();
+        ECSSHTest t = new ECSSHTest();
         try {t.test();}
         catch( Exception e) { e.printStackTrace(); }
     }
 
     private void test() throws Exception {
-        SSHKeyAuthorization tClient, tServer;
+        Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+
+        SSHKeyAuthorizationBC tClient, tServer;
         /* ======================================================
             Test to use SSH files with password
          ====================================================== */
         // Create and initialize "Client" using SSH private key file
-        tClient = new SSHKeyAuthorization();
+        tClient = new SSHKeyAuthorizationBC();
         tClient.initClientSide( new File("id_rsa_with_password_foobar"), "foobar");
 
         // Create and initialize "server" using SSH public key file
-        tServer = new SSHKeyAuthorization();
+        tServer = new SSHKeyAuthorizationBC();
         tServer.initServerSide( new File("id_rsa_with_password_foobar.pub" ));
         verificationTest( tClient, tServer, "SSH files \"id_rsa_with_password_foobar\"" );
 
@@ -40,11 +42,11 @@ public class Test
             Test to use SSH files without password
          ====================================================== */
         // Create and initialize "Client" using SSH private key file
-        tClient = new SSHKeyAuthorization();
+        tClient = new SSHKeyAuthorizationBC();
         tClient.initClientSide( new File("id_rsa_without_password"), null);
 
         // Create and initialize "server" using SSH public key file
-        tServer = new SSHKeyAuthorization();
+        tServer = new SSHKeyAuthorizationBC();
         tServer.initServerSide( new File("id_rsa_without_password.pub" ));
         verificationTest( tClient, tServer, "SSH files \"id_rsa_without_password\"" );
 
@@ -52,11 +54,11 @@ public class Test
             Test to use SSH files without password wih provided formate keys
          ====================================================== */
         // Create and initialize "Client" using SSH private key file
-        tClient = new SSHKeyAuthorization();
+        tClient = new SSHKeyAuthorizationBC();
         tClient.initClientSide( new String(Files.readAllBytes(Paths.get("id_rsa_without_password")), StandardCharsets.UTF_8),null);
 
         // Create and initialize "server" using SSH public key file
-        tServer = new SSHKeyAuthorization();
+        tServer = new SSHKeyAuthorizationBC();
         tServer.initServerSide( new String( Files.readAllBytes(Paths.get("id_rsa_without_password.pub")), StandardCharsets.UTF_8));
         verificationTest( tClient, tServer, "SSH keys as strings \"id_rsa_without_password\"" );
 
@@ -65,37 +67,32 @@ public class Test
             Test to use SSH files with password wih provided formate keys
          ====================================================== */
         // Create and initialize "Client" using SSH private key file
-        tClient = new SSHKeyAuthorization();
+        tClient = new SSHKeyAuthorizationBC();
         tClient.initClientSide( new String(Files.readAllBytes(Paths.get("id_rsa_with_password_foobar")), StandardCharsets.UTF_8),"foobar");
 
         // Create and initialize "server" using SSH public key file
-        tServer = new SSHKeyAuthorization();
+        tServer = new SSHKeyAuthorizationBC();
         tServer.initServerSide( new String( Files.readAllBytes(Paths.get("id_rsa_with_password_foobar.pub")), StandardCharsets.UTF_8));
         verificationTest( tClient, tServer, "SSH keys as strings \"id_rsa_with_password_foobar\"" );
     }
 
-    private void verificationTest(SSHKeyAuthorization client, SSHKeyAuthorization server, String usageMessage) throws Exception
+    private void verificationTest(SSHKeyAuthorizationBC client, SSHKeyAuthorizationBC server, String usageMessage) throws Exception
     {
         System.out.println("Start verification of " + usageMessage);
         // Establish a common secret key using Diffe-Hellman key exchange
-        client.setRemotePublicDHValue( server.getpublicDHValue());
-        server.setRemotePublicDHValue( client.getpublicDHValue());
+        client.initAgreement( server.getAgreementPublicKey());
+        server.initAgreement( client.getAgreementPublicKey());
 
         // Verify that client and server has agreed upon the same secret value
-        BigInteger client_secret_value = client.getSecretValue();
-        BigInteger server_secret_value = server.getSecretValue();
+        byte[] client_secret_key = client.getCommonSecretKey();
+        byte[] server_secret_key= server.getCommonSecretKey();
 
-        if (!client_secret_value.equals(server_secret_value)) {
-            throw new Exception("Common secret DH value is not the same");
+        if (server_secret_key.length != client_secret_key.length) {
+            throw new Exception("Common secret key value length is not the same");
         }
-
-        // Verify that client and server has agreed upon the same secret key, later being used to establishing a secure channel
-        byte[] clt_key_bytes = client.getSecretKey();
-        byte[] srv_key_bytes = server.getSecretKey();
-
-        for (int i = 0; i < clt_key_bytes.length; i++) {
-            if (clt_key_bytes[i] != srv_key_bytes[i]) {
-                throw new Exception("Secret key are not the same at position " + i);
+        for (int i = 0; i < server_secret_key.length; i++) {
+            if (server_secret_key[i] != client_secret_key[i]) {
+                throw new Exception("Common secret key value is not the same at position " + i);
             }
         }
 
@@ -103,8 +100,8 @@ public class Test
         // an encrypted session can be established. In this test we will use the AES256Ctr implementation provided
         // by com.sshtools.common.ssh.components.jce;
 
-            SecureChannel cltCipher = new SecureChannel( client.getSecretKey());
-            SecureChannel srvCipher = new SecureChannel( server.getSecretKey());
+            SecureChannel clientCipher = new SecureChannel( client_secret_key);
+            SecureChannel serverCipher = new SecureChannel( server_secret_key);
 
             /*
              Now the server needs to verify that the client is in posetion of the private key
@@ -112,15 +109,15 @@ public class Test
             // Create and get a challange (128 bytes) encrypted with the SSH public key
             byte[] tEncryptedChallange = server.getEncryptedChallange(128);
             // encrypt and "send" the encrypted-challange to the client over the secure channel established
-            byte[] tSrvChlData = srvCipher.encrypt( tEncryptedChallange );
+            byte[] tSrvChlData = serverCipher.encrypt( tEncryptedChallange );
             // the client need to the decrypt the encrypted data received from the server
-            byte[] tCltChlData = cltCipher.decrypt( tSrvChlData );
+            byte[] tCltChlData = clientCipher.decrypt( tSrvChlData );
             // the client must now decrypt the challange with its SSH private key
             byte[] tUncryptedChallange = client.decryptChallange( tCltChlData );
             // when having the uncrypted challange it should be sent back to server using the secure-channel
-            tCltChlData = cltCipher.encrypt( tUncryptedChallange );
+            tCltChlData = clientCipher.encrypt( tUncryptedChallange );
             // when the server receives the response from the client it needs to decrypt the response
-            tUncryptedChallange = srvCipher.decrypt(tCltChlData);
+            tUncryptedChallange = serverCipher.decrypt(tCltChlData);
             // When having the uncrypted challange from the client it needs to be verified against the generated challange
             if (!server.verifyChallange( tUncryptedChallange)) {
                 throw new Exception("Failed to verify challange");
